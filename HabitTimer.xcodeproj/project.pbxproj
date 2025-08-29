@@ -1,0 +1,746 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		553A89112E617E3F0010C8F5 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 553A89102E617E3F0010C8F5 /* WidgetKit.framework */; };
+		553A89132E617E3F0010C8F5 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 553A89122E617E3F0010C8F5 /* SwiftUI.framework */; };
+		553A89222E617E410010C8F5 /* HabitTimerWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 553A890E2E617E3E0010C8F5 /* HabitTimerWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		553A88D92E6175A80010C8F5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 553A88C32E6175A60010C8F5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 553A88CA2E6175A60010C8F5;
+			remoteInfo = HabitTimer;
+		};
+		553A88E32E6175A80010C8F5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 553A88C32E6175A60010C8F5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 553A88CA2E6175A60010C8F5;
+			remoteInfo = HabitTimer;
+		};
+		553A89202E617E410010C8F5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 553A88C32E6175A60010C8F5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 553A890D2E617E3E0010C8F5;
+			remoteInfo = HabitTimerWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		553A89272E617E410010C8F5 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				553A89222E617E410010C8F5 /* HabitTimerWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		553A88CB2E6175A60010C8F5 /* HabitTimer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HabitTimer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		553A88D82E6175A80010C8F5 /* HabitTimerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HabitTimerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		553A88E22E6175A80010C8F5 /* HabitTimerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HabitTimerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		553A890E2E617E3E0010C8F5 /* HabitTimerWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = HabitTimerWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		553A89102E617E3F0010C8F5 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		553A89122E617E3F0010C8F5 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		553A89232E617E410010C8F5 /* Exceptions for "HabitTimerWidget" folder in "HabitTimerWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 553A890D2E617E3E0010C8F5 /* HabitTimerWidgetExtension */;
+		};
+		553A892B2E617F2D0010C8F5 /* Exceptions for "HabitTimer" folder in "HabitTimerWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Habit.swift,
+			);
+			target = 553A890D2E617E3E0010C8F5 /* HabitTimerWidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		553A88CD2E6175A60010C8F5 /* HabitTimer */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				553A892B2E617F2D0010C8F5 /* Exceptions for "HabitTimer" folder in "HabitTimerWidgetExtension" target */,
+			);
+			path = HabitTimer;
+			sourceTree = "<group>";
+		};
+		553A88DB2E6175A80010C8F5 /* HabitTimerTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = HabitTimerTests;
+			sourceTree = "<group>";
+		};
+		553A88E52E6175A80010C8F5 /* HabitTimerUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = HabitTimerUITests;
+			sourceTree = "<group>";
+		};
+		553A89142E617E3F0010C8F5 /* HabitTimerWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				553A89232E617E410010C8F5 /* Exceptions for "HabitTimerWidget" folder in "HabitTimerWidgetExtension" target */,
+			);
+			path = HabitTimerWidget;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		553A88C82E6175A60010C8F5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		553A88D52E6175A80010C8F5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		553A88DF2E6175A80010C8F5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		553A890B2E617E3E0010C8F5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				553A89132E617E3F0010C8F5 /* SwiftUI.framework in Frameworks */,
+				553A89112E617E3F0010C8F5 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		553A88C22E6175A60010C8F5 = {
+			isa = PBXGroup;
+			children = (
+				553A88CD2E6175A60010C8F5 /* HabitTimer */,
+				553A88DB2E6175A80010C8F5 /* HabitTimerTests */,
+				553A88E52E6175A80010C8F5 /* HabitTimerUITests */,
+				553A89142E617E3F0010C8F5 /* HabitTimerWidget */,
+				553A890F2E617E3F0010C8F5 /* Frameworks */,
+				553A88CC2E6175A60010C8F5 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		553A88CC2E6175A60010C8F5 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				553A88CB2E6175A60010C8F5 /* HabitTimer.app */,
+				553A88D82E6175A80010C8F5 /* HabitTimerTests.xctest */,
+				553A88E22E6175A80010C8F5 /* HabitTimerUITests.xctest */,
+				553A890E2E617E3E0010C8F5 /* HabitTimerWidgetExtension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		553A890F2E617E3F0010C8F5 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				553A89102E617E3F0010C8F5 /* WidgetKit.framework */,
+				553A89122E617E3F0010C8F5 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		553A88CA2E6175A60010C8F5 /* HabitTimer */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 553A88EC2E6175A80010C8F5 /* Build configuration list for PBXNativeTarget "HabitTimer" */;
+			buildPhases = (
+				553A88C72E6175A60010C8F5 /* Sources */,
+				553A88C82E6175A60010C8F5 /* Frameworks */,
+				553A88C92E6175A60010C8F5 /* Resources */,
+				553A89272E617E410010C8F5 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				553A89212E617E410010C8F5 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				553A88CD2E6175A60010C8F5 /* HabitTimer */,
+			);
+			name = HabitTimer;
+			packageProductDependencies = (
+			);
+			productName = HabitTimer;
+			productReference = 553A88CB2E6175A60010C8F5 /* HabitTimer.app */;
+			productType = "com.apple.product-type.application";
+		};
+		553A88D72E6175A80010C8F5 /* HabitTimerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 553A88EF2E6175A80010C8F5 /* Build configuration list for PBXNativeTarget "HabitTimerTests" */;
+			buildPhases = (
+				553A88D42E6175A80010C8F5 /* Sources */,
+				553A88D52E6175A80010C8F5 /* Frameworks */,
+				553A88D62E6175A80010C8F5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				553A88DA2E6175A80010C8F5 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				553A88DB2E6175A80010C8F5 /* HabitTimerTests */,
+			);
+			name = HabitTimerTests;
+			packageProductDependencies = (
+			);
+			productName = HabitTimerTests;
+			productReference = 553A88D82E6175A80010C8F5 /* HabitTimerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		553A88E12E6175A80010C8F5 /* HabitTimerUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 553A88F22E6175A80010C8F5 /* Build configuration list for PBXNativeTarget "HabitTimerUITests" */;
+			buildPhases = (
+				553A88DE2E6175A80010C8F5 /* Sources */,
+				553A88DF2E6175A80010C8F5 /* Frameworks */,
+				553A88E02E6175A80010C8F5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				553A88E42E6175A80010C8F5 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				553A88E52E6175A80010C8F5 /* HabitTimerUITests */,
+			);
+			name = HabitTimerUITests;
+			packageProductDependencies = (
+			);
+			productName = HabitTimerUITests;
+			productReference = 553A88E22E6175A80010C8F5 /* HabitTimerUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		553A890D2E617E3E0010C8F5 /* HabitTimerWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 553A89242E617E410010C8F5 /* Build configuration list for PBXNativeTarget "HabitTimerWidgetExtension" */;
+			buildPhases = (
+				553A890A2E617E3E0010C8F5 /* Sources */,
+				553A890B2E617E3E0010C8F5 /* Frameworks */,
+				553A890C2E617E3E0010C8F5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				553A89142E617E3F0010C8F5 /* HabitTimerWidget */,
+			);
+			name = HabitTimerWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = HabitTimerWidgetExtension;
+			productReference = 553A890E2E617E3E0010C8F5 /* HabitTimerWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		553A88C32E6175A60010C8F5 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1640;
+				LastUpgradeCheck = 1640;
+				TargetAttributes = {
+					553A88CA2E6175A60010C8F5 = {
+						CreatedOnToolsVersion = 16.4;
+					};
+					553A88D72E6175A80010C8F5 = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = 553A88CA2E6175A60010C8F5;
+					};
+					553A88E12E6175A80010C8F5 = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = 553A88CA2E6175A60010C8F5;
+					};
+					553A890D2E617E3E0010C8F5 = {
+						CreatedOnToolsVersion = 16.4;
+					};
+				};
+			};
+			buildConfigurationList = 553A88C62E6175A60010C8F5 /* Build configuration list for PBXProject "HabitTimer" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 553A88C22E6175A60010C8F5;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 553A88CC2E6175A60010C8F5 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				553A88CA2E6175A60010C8F5 /* HabitTimer */,
+				553A88D72E6175A80010C8F5 /* HabitTimerTests */,
+				553A88E12E6175A80010C8F5 /* HabitTimerUITests */,
+				553A890D2E617E3E0010C8F5 /* HabitTimerWidgetExtension */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		553A88C92E6175A60010C8F5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		553A88D62E6175A80010C8F5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		553A88E02E6175A80010C8F5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		553A890C2E617E3E0010C8F5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		553A88C72E6175A60010C8F5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		553A88D42E6175A80010C8F5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		553A88DE2E6175A80010C8F5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		553A890A2E617E3E0010C8F5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		553A88DA2E6175A80010C8F5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 553A88CA2E6175A60010C8F5 /* HabitTimer */;
+			targetProxy = 553A88D92E6175A80010C8F5 /* PBXContainerItemProxy */;
+		};
+		553A88E42E6175A80010C8F5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 553A88CA2E6175A60010C8F5 /* HabitTimer */;
+			targetProxy = 553A88E32E6175A80010C8F5 /* PBXContainerItemProxy */;
+		};
+		553A89212E617E410010C8F5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 553A890D2E617E3E0010C8F5 /* HabitTimerWidgetExtension */;
+			targetProxy = 553A89202E617E410010C8F5 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		553A88EA2E6175A80010C8F5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		553A88EB2E6175A80010C8F5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		553A88ED2E6175A80010C8F5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CXY5USF49K;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.frankreuter.HabitTimer;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		553A88EE2E6175A80010C8F5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CXY5USF49K;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.frankreuter.HabitTimer;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		553A88F02E6175A80010C8F5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.frankreuter.HabitTimerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HabitTimer.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/HabitTimer";
+			};
+			name = Debug;
+		};
+		553A88F12E6175A80010C8F5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.frankreuter.HabitTimerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HabitTimer.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/HabitTimer";
+			};
+			name = Release;
+		};
+		553A88F32E6175A80010C8F5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.frankreuter.HabitTimerUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = HabitTimer;
+			};
+			name = Debug;
+		};
+		553A88F42E6175A80010C8F5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.frankreuter.HabitTimerUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = HabitTimer;
+			};
+			name = Release;
+		};
+		553A89252E617E410010C8F5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CXY5USF49K;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = HabitTimerWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = HabitTimerWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.frankreuter.HabitTimer.HabitTimerWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		553A89262E617E410010C8F5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CXY5USF49K;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = HabitTimerWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = HabitTimerWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.frankreuter.HabitTimer.HabitTimerWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		553A88C62E6175A60010C8F5 /* Build configuration list for PBXProject "HabitTimer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				553A88EA2E6175A80010C8F5 /* Debug */,
+				553A88EB2E6175A80010C8F5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		553A88EC2E6175A80010C8F5 /* Build configuration list for PBXNativeTarget "HabitTimer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				553A88ED2E6175A80010C8F5 /* Debug */,
+				553A88EE2E6175A80010C8F5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		553A88EF2E6175A80010C8F5 /* Build configuration list for PBXNativeTarget "HabitTimerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				553A88F02E6175A80010C8F5 /* Debug */,
+				553A88F12E6175A80010C8F5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		553A88F22E6175A80010C8F5 /* Build configuration list for PBXNativeTarget "HabitTimerUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				553A88F32E6175A80010C8F5 /* Debug */,
+				553A88F42E6175A80010C8F5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		553A89242E617E410010C8F5 /* Build configuration list for PBXNativeTarget "HabitTimerWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				553A89252E617E410010C8F5 /* Debug */,
+				553A89262E617E410010C8F5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 553A88C32E6175A60010C8F5 /* Project object */;
+}
