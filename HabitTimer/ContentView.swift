@@ -184,19 +184,56 @@ struct AllListSection: View {
 
 struct HabitListRow: View {
     let habit: Habit
+    @EnvironmentObject var store: HabitStore
 
     var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(habit.title)
-                    .font(.headline)
-                Text("\(formatDuration(habit)) • " + dayString(habit.activeDays))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(habit.title)
+                        .font(.headline)
+                    Text("\(formatDuration(habit)) • " + dayString(habit.activeDays))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                if let rem = store.sessionRemainingTotalSeconds(for: habit) {
+                    let isRunning = store.isRunning(habit)
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text(isRunning ? "Aktiv" : "Pausiert")
+                            .font(.caption2)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 4)
+                            .background((isRunning ? Color.green : Color.orange).opacity(0.15))
+                            .clipShape(Capsule())
+                        Label(formatSeconds(rem), systemImage: isRunning ? "timer" : "pause")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
-            Spacer()
+            if let p = progressFraction(for: habit) {
+                ProgressView(value: p)
+                    .progressViewStyle(.linear)
+                    .tint(.green)
+            }
         }
         .contentShape(Rectangle())
+    }
+
+    private func plannedSeconds(_ habit: Habit) -> Int {
+        if !habit.segments.isEmpty {
+            return habit.segments.reduce(0) { $0 + max(0, Int($1.duration.rounded())) }
+        }
+        return habit.minutes * 60 + habit.seconds
+    }
+
+    private func progressFraction(for habit: Habit) -> Double? {
+        guard let remaining = store.sessionRemainingTotalSeconds(for: habit) else { return nil }
+        let total = plannedSeconds(habit)
+        guard total > 0 else { return nil }
+        let done = max(0, total - remaining)
+        return max(0, min(1, Double(done) / Double(total)))
     }
 
     private func dayString(_ days: Set<HabitDay>) -> String {
@@ -214,6 +251,14 @@ struct HabitListRow: View {
         let m = totalSeconds / 60
         let s = totalSeconds % 60
         return String(format: "%d:%02d", m, s)
+    }
+    private func formatSeconds(_ s: Int) -> String {
+        let s = max(0, s)
+        let h = s / 3600
+        let m = (s % 3600) / 60
+        let sec = s % 60
+        if h > 0 { return String(format: "%d:%02d:%02d", h, m, sec) }
+        return String(format: "%02d:%02d", m, sec)
     }
 }
 

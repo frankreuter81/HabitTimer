@@ -16,6 +16,7 @@ struct CountdownView: View {
     @State private var remaining: Int = 0
     @State private var timerActive = false
     @State private var showEdit = false
+    @State private var hasStarted = false
 
     private let tick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -92,6 +93,18 @@ struct CountdownView: View {
 
     private var remainingTotalTimeString: String { format(remainingTotalSeconds) }
 
+    private var nextSegmentIndex: Int? {
+        let next = currentIndex + 1
+        return next < segments.count ? next : nil
+    }
+
+    private var startPauseLabelText: String {
+        timerActive ? "Pause" : (hasStarted ? "Weiter" : "Start")
+    }
+    private var startPauseSystemImage: String {
+        timerActive ? "pause.fill" : "play.fill"
+    }
+
     private var isPaused: Bool {
         !timerActive && remaining > 0
     }
@@ -122,9 +135,9 @@ struct CountdownView: View {
             timerActive = false
 
             // Log-Eintrag anlegen (nur bei echtem Abschluss)
-            let finishedAt = Date()
+            _ = Date()
             let total = segments.reduce(0) { $0 + max(0, Int($1.duration.rounded())) }
-            store.log(
+            self.store.log(
                 habit: habit,
                 completed: true,
                 plannedSeconds: total,
@@ -140,13 +153,42 @@ struct CountdownView: View {
         }
     }
     
+    private func startPauseTapped() {
+        if timerActive {
+            timerActive = false
+            self.store.updateLiveActivityFromForeground(habit: self.habit, remainingTotalSeconds: self.remainingTotalSeconds, paused: true)
+        } else {
+            if isStopSegment(at: currentIndex) {
+                advance()
+            }
+            if segments.indices.contains(currentIndex) && !isStopSegment(at: currentIndex) && remaining > 0 {
+                hasStarted = true
+                timerActive = true
+                self.store.updateLiveActivityFromForeground(habit: self.habit, remainingTotalSeconds: self.remainingTotalSeconds, paused: false)
+            }
+        }
+    }
+
+    private func cancelTapped() {
+        self.store.log(
+            habit: habit,
+            completed: false,
+            plannedSeconds: totalSeconds,
+            elapsedSeconds: elapsedSecondsSoFar
+        )
+        self.store.stopBackgroundRun(habit: self.habit)
+        resetTimer()
+    }
+
     private func resetTimer() {
         timerActive = false
         currentIndex = 0
+        hasStarted = false
         jumpToFirstPlayable()
     }
 
-    var body: some View {
+    @ViewBuilder
+    private func headerView() -> some View {
         VStack(spacing: 24) {
             Text(title)
                 .font(.system(size: 32, weight: .bold, design: .rounded))
@@ -171,62 +213,56 @@ struct CountdownView: View {
                 .multilineTextAlignment(.center)
                 .padding(.top, 4)
 
-            Text(timeString)
+            Text(isStopSegment(at: currentIndex) ? "Stop" : timeString)
                 .font(.system(size: 56, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .multilineTextAlignment(.center)
+        }
+    }
 
-            let nextIndex = min(currentIndex + 1, segments.count - 1)
-            if segments.indices.contains(nextIndex), nextIndex != currentIndex {
-                VStack(spacing: 4) {
-                    Text("Nächster:")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    HStack(spacing: 6) {
-                        Text(label(for: nextIndex)).bold()
-                        Text("–")
-                        Text(durationString(for: nextIndex))
-                    }
-                    .font(.body)
+    @ViewBuilder
+    private func nextSegmentView() -> some View {
+        if let nextIndex = nextSegmentIndex {
+            VStack(spacing: 4) {
+                Text("Nächster:")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                HStack(spacing: 6) {
+                    Text(label(for: nextIndex)).bold()
+                    Text("–")
+                    Text(durationString(for: nextIndex))
                 }
-                .frame(maxWidth: .infinity)
-                .multilineTextAlignment(.center)
+                .font(.body)
             }
-            HStack(spacing: 12) {
-                Button {
-                    if timerActive {
-                        timerActive = false
-                    } else {
-                        // (Weiter)Start: Wenn wir auf einem Stop-Pause-Segment stehen, erst weiter springen
-                        if isStopSegment(at: currentIndex) {
-                            advance()
-                        }
-                        // nur starten, wenn wir nicht sofort am Ende sind
-                        timerActive = true
-                    }
-                } label: {
-                    Label(timerActive ? "Pause" : (isPaused ? "Weiter" : "Start"),
-                          systemImage: timerActive ? "pause.fill" : "play.fill")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
+            .frame(maxWidth: .infinity)
+            .multilineTextAlignment(.center)
+        }
+    }
 
-                Button {
-                    store.log(
-                        habit: habit,
-                        completed: false,
-                        plannedSeconds: totalSeconds,
-                        elapsedSeconds: elapsedSecondsSoFar
-                    )
-                    resetTimer()
-                } label: {
-                    Label("Abbrechen", systemImage: "xmark.circle.fill")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
+    @ViewBuilder
+    private func controlsView() -> some View {
+        HStack(spacing: 12) {
+            Button(action: startPauseTapped) {
+                Label(startPauseLabelText, systemImage: startPauseSystemImage)
+                    .frame(maxWidth: .infinity)
             }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+
+            Button(action: cancelTapped) {
+                Label("Abbrechen", systemImage: "xmark.circle.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+        }
+    }
+
+var body: some View {
+        VStack(spacing: 24) {
+            headerView()
+            nextSegmentView()
+            controlsView()
         }
         .navigationTitle("")
         .toolbarTitleDisplayMode(.inline)
@@ -253,36 +289,67 @@ struct CountdownView: View {
         }
         .padding()
         .onAppear {
-            segments = habit.segments
-
+            // Always sync title and base segments
             title = habit.title
+            segments = habit.segments
+            hasStarted = false
 
-            if segments.isEmpty {
-                segments = [HabitSegment(type: .start, duration: 0), HabitSegment(type: .end, duration: 0)]
+            // If there is a background session for this habit, adopt its state
+            if let sess = self.store.backgroundSessions[self.habit.id] {
+                segments = sess.segments
+                currentIndex = min(max(0, sess.currentIndex), max(0, segments.count - 1))
+                remaining = max(0, sess.remaining)
+                timerActive = sess.active
+                hasStarted = sess.active || hasStarted
+                // Take ownership back from the store ticker
+                self.store.stopBackgroundRun(habit: self.habit)
+            } else {
+                // Initialize from scratch
+                if segments.isEmpty {
+                    segments = [HabitSegment(type: .start, duration: 0), HabitSegment(type: .end, duration: 0)]
+                }
+                currentIndex = 0
+                jumpToFirstPlayable()
             }
-            currentIndex = 0
-            jumpToFirstPlayable()
         }
-        .onChange(of: habit.segments.map(\.id)) { _ in
+        .onChange(of: habit.segments.map(\.id)) { _, _ in
             segments = habit.segments
             currentIndex = 0
+            hasStarted = false
             jumpToFirstPlayable()
         }
-        .onChange(of: habit.title) { newTitle in
+        .onChange(of: habit.title) { _, newTitle in
             title = newTitle
         }
         .onReceive(tick) { _ in
             guard timerActive else { return }
             if remaining > 1 {
                 remaining -= 1
+                let total = remainingTotalSeconds
+                // Live Activity: foreground tick update
+                self.store.updateLiveActivityFromForeground(habit: self.habit, remainingTotalSeconds: total, paused: false)
             } else {
                 remaining = 0
                 advance()
+                if timerActive {
+                    let total = remainingTotalSeconds
+                    // If not finished (and not at Stop), update once after advancing
+                    self.store.updateLiveActivityFromForeground(habit: self.habit, remainingTotalSeconds: total, paused: false)
+                }
+            }
+        }
+        .onDisappear {
+            if timerActive {
+                // laufend → als aktive Session sichern
+                self.store.beginBackgroundRun(habit: self.habit, currentIndex: self.currentIndex, remaining: self.remaining, active: true)
+                timerActive = false
+            } else if remaining > 0 {
+                // pausiert mit Restzeit → als pausierte Session sichern
+                self.store.beginBackgroundRun(habit: self.habit, currentIndex: self.currentIndex, remaining: self.remaining, active: false)
             }
         }
     }
 }
-
 #Preview("Countdown – Demo") {
     let demoHabit = Habit(
         title: "Demo-Timer",

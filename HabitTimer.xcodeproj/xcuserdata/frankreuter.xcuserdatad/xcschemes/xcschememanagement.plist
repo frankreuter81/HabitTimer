@@ -9,6 +9,11 @@
 			<key>orderHint</key>
 			<integer>0</integer>
 		</dict>
+		<key>HabitTimerIntentsExtension.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>2</integer>
+		</dict>
 		<key>HabitTimerWidgetExtension.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
@@ -33,6 +38,11 @@
 			<true/>
 		</dict>
 		<key>553A890D2E617E3E0010C8F5</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>55D28C652E6838D8001E17B3</key>
 		<dict>
 			<key>primary</key>
 			<true/>

@@ -9,10 +9,14 @@ struct HabitTimerApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(store)
+                .onAppear { HabitStore.shared = store }
                 .onChange(of: scenePhase) { _, newPhase in
                     if newPhase == .active {
                         store.backfillSkippedSinceLastSeen()
                     }
+                }
+                .onOpenURL { url in
+                    _ = store.handleDeepLink(url)
                 }
         }
     }

@@ -1,6 +1,13 @@
 import Foundation
 import SwiftUI
 import WidgetKit
+import Combine
+import ActivityKit
+import os
+#if canImport(AppIntents)
+import AppIntents
+#endif
+
 
 enum TimerLogStatus: String, Codable, Hashable {
     case completed
@@ -72,11 +79,309 @@ private var sharedDefaults: UserDefaults {
     UserDefaults(suiteName: appGroupID) ?? .standard
 }
 
+private let habitLog = Logger(subsystem: "de.frankreuter.habittimer", category: "HabitStore")
+
 @MainActor
 final class HabitStore: ObservableObject {
+    // Shared reference so AppIntents can control the running store instance
+    static var shared: HabitStore?
     @Published var habits: [Habit] = [] { didSet { save() } }
     @Published var completions: [UUID: Set<String>] = [:] { didSet { save() } }
     @Published var logs: [TimerLogEntry] = [] { didSet { save() } }
+
+    // MARK: - Background timer sessions
+    struct BackgroundSession {
+        var habitID: UUID
+        var currentIndex: Int
+        var remaining: Int
+        var segments: [HabitSegment]
+        var active: Bool
+    }
+
+    @Published var backgroundSessions: [UUID: BackgroundSession] = [:]
+    private var backgroundTicker: AnyCancellable?
+
+    #if canImport(ActivityKit)
+    // MARK: - Live Activity helpers
+    @available(iOS 16.1, *)
+    private func findActivity(for habitID: UUID) -> Activity<HabitTimerActivityAttributes>? {
+        let all = Activity<HabitTimerActivityAttributes>.activities
+        let match = all.first { $0.attributes.habitID == habitID.uuidString }
+        #if DEBUG
+        print("[LiveActivity] findActivity: activities=\(all.count), match=\(match != nil)")
+        #endif
+        return match
+    }
+
+    private func updateLiveActivity(for habit: Habit, remaining: Int, paused: Bool) {
+        guard remaining >= 0 else { return }
+        if #available(iOS 16.1, *) {
+            let auth = ActivityAuthorizationInfo()
+            if !auth.areActivitiesEnabled {
+                habitLog.warning("[LiveActivity] not enabled; skip update (remaining=\(remaining), paused=\(paused, privacy: .public))")
+                return
+            }
+            let state = HabitTimerActivityAttributes.ContentState(title: habit.title, remaining: max(0, remaining), paused: paused, total: plannedSeconds(for: habit))
+            if let act = findActivity(for: habit.id) {
+                habitLog.info("[LiveActivity] update existing activity for \(habit.title, privacy: .public)")
+                Task {
+                    if #available(iOS 16.2, *) {
+                        await act.update(ActivityContent(state: state, staleDate: nil))
+                    } else {
+                        await act.update(using: state)
+                    }
+                }
+            } else {
+                habitLog.info("[LiveActivity] request creating new activity for \(habit.title, privacy: .public)")
+                do {
+                    let attrs = HabitTimerActivityAttributes(habitID: habit.id.uuidString)
+                    if #available(iOS 16.2, *) {
+                        let content = ActivityContent(state: state, staleDate: nil)
+                        let activity = try Activity.request(attributes: attrs, content: content, pushType: nil)
+                        habitLog.info("[LiveActivity] started id=\(activity.id, privacy: .public) habitID=\(habit.id.uuidString, privacy: .public)")
+                    } else {
+                        let activity = try Activity.request(attributes: attrs, contentState: state, pushType: nil)
+                        habitLog.info("[LiveActivity] started (16.1) id=\(activity.id, privacy: .public) habitID=\(habit.id.uuidString, privacy: .public)")
+                    }
+                } catch {
+                    habitLog.error("[LiveActivity] request FAILED: \(String(describing: error), privacy: .public)")
+                }
+            }
+        }
+    }
+
+    func endLiveActivity(for habit: Habit) {
+        if #available(iOS 16.1, *) {
+            habitLog.info("[LiveActivity] end: \(habit.title, privacy: .public)")
+            for act in Activity<HabitTimerActivityAttributes>.activities where act.attributes.habitID == habit.id.uuidString {
+                Task {
+                    if #available(iOS 16.2, *) {
+                        await act.end(ActivityContent(state: act.content.state, staleDate: nil), dismissalPolicy: .immediate)
+                    } else {
+                        await act.end(dismissalPolicy: .immediate)
+                    }
+                }
+            }
+        }
+    }
+
+    @available(iOS 16.1, *)
+    func debugDumpLiveActivities() {
+        let all = Activity<HabitTimerActivityAttributes>.activities
+        print("[LiveActivity] dump: count=\(all.count)")
+        for a in all { print("  id=\(a.id), habitID=\(a.attributes.habitID ?? "-" )") }
+    }
+    #endif
+
+    private func totalRemaining(for sess: BackgroundSession) -> Int {
+        let tail: Int
+        if sess.currentIndex + 1 < sess.segments.count {
+            tail = sess.segments[(sess.currentIndex + 1)...].reduce(0) { $0 + max(0, Int($1.duration.rounded())) }
+        } else {
+            tail = 0
+        }
+        return max(0, sess.remaining + tail)
+    }
+
+    /// Public wrapper: allow views to update the Live Activity while in foreground (no background session needed)
+    func updateLiveActivityFromForeground(habit: Habit, remainingTotalSeconds: Int, paused: Bool) {
+#if canImport(ActivityKit)
+        self.updateLiveActivity(for: habit, remaining: remainingTotalSeconds, paused: paused)
+#else
+        // no-op when ActivityKit is unavailable
+#endif
+    }
+
+    func beginBackgroundRun(habit: Habit, currentIndex: Int, remaining: Int, active: Bool = true) {
+        backgroundSessions[habit.id] = BackgroundSession(
+            habitID: habit.id,
+            currentIndex: currentIndex,
+            remaining: max(0, remaining),
+            segments: habit.segments,
+            active: active
+        )
+        // Update Live Activity state (start if needed)
+        if let sess = backgroundSessions[habit.id] {
+            let total = totalRemaining(for: sess)
+            updateLiveActivity(for: habit, remaining: total, paused: !active)
+        }
+    }
+
+    func pauseBackgroundRun(habit: Habit) {
+        backgroundSessions[habit.id]?.active = false
+        if let sess = backgroundSessions[habit.id], let habitObj = habits.first(where: { $0.id == habit.id }) {
+            let total = totalRemaining(for: sess)
+            updateLiveActivity(for: habitObj, remaining: total, paused: true)
+        }
+    }
+
+    /// Toggles pause/resume for a habit and updates the Live Activity accordingly.
+    func togglePause(habit: Habit) {
+        if isPaused(habit) {
+            resumeBackgroundRun(habit: habit)
+        } else {
+            pauseBackgroundRun(habit: habit)
+        }
+    }
+
+    /// Setzt eine pausierte Sitzung fort oder startet sie neu, wenn keine Sitzung existiert
+    func resumeBackgroundRun(habit: Habit) {
+        if var sess = backgroundSessions[habit.id] {
+            sess.active = true
+            backgroundSessions[habit.id] = sess
+            let total = totalRemaining(for: sess)
+            updateLiveActivity(for: habit, remaining: total, paused: false)
+        } else {
+            // Keine Sitzung vorhanden → mit voller geplanter Dauer neu starten
+            let remaining = plannedSeconds(for: habit)
+            beginBackgroundRun(habit: habit, currentIndex: 0, remaining: remaining, active: true)
+        }
+    }
+
+    /// Cancels any running/paused session for the habit and ends the Live Activity.
+    func cancel(habit: Habit) {
+        endLiveActivity(for: habit)
+        stopBackgroundRun(habit: habit)
+    }
+
+    /// Verarbeitet Deeplinks wie:
+    /// habittimer://live?habit=<UUID>&action=pause|resume|cancel
+    @discardableResult
+    func handleDeepLink(_ url: URL) -> Bool {
+        guard let comps = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              comps.scheme?.lowercased() == "habittimer",
+              (comps.host?.lowercased() == "live" || comps.path.lowercased().hasPrefix("/live"))
+        else {
+            return false
+        }
+        let items = comps.queryItems ?? []
+        let habitIDString = items.first(where: { $0.name == "habit" })?.value
+        let action = (items.first(where: { $0.name == "action" })?.value ?? "").lowercased()
+        guard let idStr = habitIDString, let id = UUID(uuidString: idStr),
+              let habit = habits.first(where: { $0.id == id }) else {
+            #if DEBUG
+            print("[DeepLink] invalid or missing habit id: \(habitIDString ?? "-")")
+            #endif
+            return false
+        }
+        #if DEBUG
+        print("[DeepLink] action=\(action) habit=\(habit.title) (\(habit.id))")
+        #endif
+        switch action {
+        case "pause":
+            pauseBackgroundRun(habit: habit)
+            return true
+        case "resume", "play", "start":
+            resumeBackgroundRun(habit: habit)
+            return true
+        case "cancel", "stop", "end":
+            endLiveActivity(for: habit)
+            stopBackgroundRun(habit: habit)
+            return true
+        default:
+            // Unbekannte Aktion → nur App öffnen
+            return false
+        }
+    }
+
+    func stopBackgroundRun(habit: Habit) {
+        backgroundSessions[habit.id] = nil
+    }
+
+    func isRunning(_ habit: Habit) -> Bool {
+        backgroundSessions[habit.id]?.active == true
+    }
+
+    func isPaused(_ habit: Habit) -> Bool {
+        if let s = backgroundSessions[habit.id] {
+            return s.active == false
+        }
+        return false
+    }
+
+    /// Remaining total seconds for any session (running or paused)
+    func sessionRemainingTotalSeconds(for habit: Habit) -> Int? {
+        guard let s = backgroundSessions[habit.id] else { return nil }
+        let tail: Int
+        if s.currentIndex + 1 < s.segments.count {
+            tail = s.segments[(s.currentIndex + 1)...].reduce(0) { $0 + max(0, Int($1.duration.rounded())) }
+        } else {
+            tail = 0
+        }
+        return max(0, s.remaining + tail)
+    }
+
+    /// Remaining total seconds for a running background session of the given habit (including following segments).
+    func runningRemainingTotalSeconds(for habit: Habit) -> Int? {
+        guard let s = backgroundSessions[habit.id], s.active else { return nil }
+        let tail: Int
+        if s.currentIndex + 1 < s.segments.count {
+            tail = s.segments[(s.currentIndex + 1)...].reduce(0) { $0 + max(0, Int($1.duration.rounded())) }
+        } else {
+            tail = 0
+        }
+        return max(0, s.remaining + tail)
+    }
+
+    private func isStopSegment(_ seg: HabitSegment) -> Bool {
+        seg.type == .pause && seg.isStop
+    }
+
+    private func advanceBackground(_ s: inout BackgroundSession) -> Bool {
+        if s.currentIndex < s.segments.count - 1 {
+            s.currentIndex += 1
+            s.remaining = max(0, Int(s.segments[s.currentIndex].duration.rounded()))
+            if isStopSegment(s.segments[s.currentIndex]) {
+                s.active = false
+            }
+            return true
+        } else {
+            return false // finished
+        }
+    }
+
+    private func setupBackgroundTicker() {
+        backgroundTicker = Timer.publish(every: 1, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                guard let self else { return }
+                if self.backgroundSessions.isEmpty { return }
+                var toRemove: [UUID] = []
+                for (id, var sess) in self.backgroundSessions {
+                    guard sess.active else { continue }
+                    if sess.remaining > 0 {
+                        sess.remaining -= 1
+                        self.backgroundSessions[id] = sess
+                        if let habit = self.habits.first(where: { $0.id == id }) {
+                            let total = self.totalRemaining(for: sess)
+                            self.updateLiveActivity(for: habit, remaining: total, paused: !sess.active)
+                        }
+                    } else {
+                        // segment finished → advance
+                        if self.advanceBackground(&sess) {
+                            // auto-advance zero-duration segments (except Stop-Pause)
+                            while sess.remaining == 0 && sess.currentIndex < sess.segments.count && !self.isStopSegment(sess.segments[sess.currentIndex]) {
+                                if !self.advanceBackground(&sess) { break }
+                            }
+                            self.backgroundSessions[id] = sess
+                            if let habit = self.habits.first(where: { $0.id == id }) {
+                                let total = self.totalRemaining(for: sess)
+                                self.updateLiveActivity(for: habit, remaining: total, paused: !sess.active)
+                            }
+                        } else {
+                            // finished all → log completion and remove
+                            if let habit = self.habits.first(where: { $0.id == id }) {
+                                let total = sess.segments.reduce(0) { $0 + max(0, Int($1.duration.rounded())) }
+                                self.log(habit: habit, completed: true, plannedSeconds: total, elapsedSeconds: total)
+                                self.endLiveActivity(for: habit)
+                            }
+                            toRemove.append(id)
+                        }
+                    }
+                }
+                for id in toRemove { self.backgroundSessions[id] = nil }
+            }
+    }
 
     private let habitsKey = "habits_v1"
     private let completionsKey = "completions_v1"
@@ -84,7 +389,7 @@ final class HabitStore: ObservableObject {
     private let lastSeenKey = "lastSeen_v1"
     private var lastSeenDate: Date? { didSet { saveLastSeen() } }
 
-    init() { load() }
+    init() { load(); setupBackgroundTicker() }
 
     private var calendar: Calendar {
         var c = Calendar.current
@@ -198,6 +503,11 @@ final class HabitStore: ObservableObject {
     /// Setzt anschließend `lastSeenDate` auf den Start des heutigen Tages.
     func backfillSkippedSinceLastSeen(now: Date = Date()) {
         let today = startOfDay(now)
+        // Clamp a future lastSeenDate back to today (can happen after debug time-travel)
+        if let last = lastSeenDate, last > today {
+            print("[HabitStore] backfill: clamping future lastSeenDate=\(last) -> today=\(today)")
+            lastSeenDate = today
+        }
         if lastSeenDate == nil {
             // Erste Initialisierung: nicht rückwirkend alles skippen
             lastSeenDate = today
@@ -339,6 +649,7 @@ final class HabitStore: ObservableObject {
         )
         logs.insert(entry, at: 0) // neueste zuerst
         print("[HabitStore] log(): inserted, afterCount=\(logs.count)")
+        endLiveActivity(for: habit)
     }
 
     // MARK: - Log Helpers
