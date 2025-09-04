@@ -2,15 +2,12 @@
 //  HabitTimerIntentsExtension.swift
 //  HabitTimerIntentsExtension
 //
-//  Created by Frank Reuter on 03.09.25.
+//  Entry point for App Intents. Intents are discovered automatically.
 //
 
 import AppIntents
 
-struct HabitTimerIntentsExtension: AppIntent {
-    static var title: LocalizedStringResource { "HabitTimerIntentsExtension" }
-    
-    func perform() async throws -> some IntentResult {
-        return .result()
-    }
+@main
+struct HabitTimerIntentsExtension: AppIntentsExtension {
+    // No body needed unless you also provide App Shortcuts.
 }

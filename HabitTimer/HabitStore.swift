@@ -6,7 +6,16 @@ import ActivityKit
 import os
 #if canImport(AppIntents)
 import AppIntents
+
 #endif
+#if canImport(UIKit)
+import UIKit
+#endif
+
+// Detect if running inside an app extension (Widget/Intents)
+private var isRunningInAppExtension: Bool {
+    return Bundle.main.bundlePath.hasSuffix(".appex")
+}
 
 
 enum TimerLogStatus: String, Codable, Hashable {
@@ -98,6 +107,31 @@ final class HabitStore: ObservableObject {
         var active: Bool
     }
 
+    // MARK: - Phase helpers for Live Activity (name + remaining of current segment)
+    private func currentPhaseName(for sess: BackgroundSession) -> String {
+        // If we can distinguish pause vs action via segment.type, derive a friendly name
+        // Fallbacks are generic but stable (Start/Aktion N/Pause)
+        let idx = sess.currentIndex
+        guard idx >= 0 && idx < sess.segments.count else { return "" }
+        let seg = sess.segments[idx]
+        // Try to infer: pause vs action
+        if seg.type == .pause {
+            return "Pause"
+        }
+        // Count actions up to and including current index (exclude pauses)
+        var actionNumber = 0
+        for i in 0...idx {
+            if sess.segments[i].type != .pause { actionNumber += 1 }
+        }
+        return actionNumber <= 1 ? "Start" : "Aktion \(actionNumber)"
+    }
+
+    private func currentPhaseInfo(for habit: Habit) -> (name: String, remaining: Int)? {
+        guard let sess = backgroundSessions[habit.id] else { return nil }
+        let name = currentPhaseName(for: sess)
+        return (name: name, remaining: max(0, sess.remaining))
+    }
+
     @Published var backgroundSessions: [UUID: BackgroundSession] = [:]
     private var backgroundTicker: AnyCancellable?
 
@@ -116,12 +150,44 @@ final class HabitStore: ObservableObject {
     private func updateLiveActivity(for habit: Habit, remaining: Int, paused: Bool) {
         guard remaining >= 0 else { return }
         if #available(iOS 16.1, *) {
+            if isRunningInAppExtension {
+                habitLog.warning("[LiveActivity] SKIP: update/request from extension bundle=\(Bundle.main.bundleIdentifier ?? "-", privacy: .public)")
+                return
+            }
+            // Diagnostics: environment + Info.plist flag
+            let liveKey = Bundle.main.object(forInfoDictionaryKey: "NSSupportsLiveActivities") ?? "nil"
+            let bundleID = Bundle.main.bundleIdentifier ?? "-"
+            let os = ProcessInfo.processInfo.operatingSystemVersion
+#if canImport(UIKit)
+            let idiom = UIDevice.current.userInterfaceIdiom
+            let catalyst = ProcessInfo.processInfo.isMacCatalystApp
+            let appOnMac = ProcessInfo.processInfo.isiOSAppOnMac
+            print("[LiveActivity] env: bundle=\(bundleID) NSSupportsLiveActivities=\(liveKey) os=\(os.majorVersion).\(os.minorVersion).\(os.patchVersion) idiom=\(idiom.rawValue) catalyst=\(catalyst) appOnMac=\(appOnMac)")
+#else
+            print("[LiveActivity] env: bundle=\(bundleID) NSSupportsLiveActivities=\(liveKey) (no UIKit)")
+#endif
             let auth = ActivityAuthorizationInfo()
             if !auth.areActivitiesEnabled {
                 habitLog.warning("[LiveActivity] not enabled; skip update (remaining=\(remaining), paused=\(paused, privacy: .public))")
                 return
             }
-            let state = HabitTimerActivityAttributes.ContentState(title: habit.title, remaining: max(0, remaining), paused: paused, total: plannedSeconds(for: habit))
+            // Enrich title with current phase name so the widget can show e.g. "… • Aktion 1"
+            var displayTitle = habit.title
+            if let phase = currentPhaseInfo(for: habit), !phase.name.isEmpty {
+                displayTitle += " • \(phase.name)"
+                print("[LiveActivity] phase name=\(phase.name) remaining=\(phase.remaining)")
+            }
+            var state = HabitTimerActivityAttributes.ContentState(
+                title: displayTitle,
+                remaining: max(0, remaining),
+                paused: paused,
+                total: plannedSeconds(for: habit)
+            )
+            if let phase = self.currentPhaseInfo(for: habit) {
+                state.currentPhaseName = phase.name
+                state.currentPhaseRemaining = phase.remaining
+                print("[LiveActivity] contentState phase='\(phase.name)' currentRemaining=\(phase.remaining)")
+            }
             if let act = findActivity(for: habit.id) {
                 habitLog.info("[LiveActivity] update existing activity for \(habit.title, privacy: .public)")
                 Task {
@@ -144,7 +210,8 @@ final class HabitStore: ObservableObject {
                         habitLog.info("[LiveActivity] started (16.1) id=\(activity.id, privacy: .public) habitID=\(habit.id.uuidString, privacy: .public)")
                     }
                 } catch {
-                    habitLog.error("[LiveActivity] request FAILED: \(String(describing: error), privacy: .public)")
+                    let nsErr = error as NSError
+                    habitLog.error("[LiveActivity] request FAILED: type=\(String(reflecting: type(of: error)), privacy: .public) code=\(nsErr.code) domain=\(nsErr.domain, privacy: .public) desc=\(nsErr.localizedDescription, privacy: .public)")
                 }
             }
         }
@@ -152,6 +219,10 @@ final class HabitStore: ObservableObject {
 
     func endLiveActivity(for habit: Habit) {
         if #available(iOS 16.1, *) {
+            if isRunningInAppExtension {
+                habitLog.warning("[LiveActivity] SKIP: end from extension bundle=\(Bundle.main.bundleIdentifier ?? "-", privacy: .public)")
+                return
+            }
             habitLog.info("[LiveActivity] end: \(habit.title, privacy: .public)")
             for act in Activity<HabitTimerActivityAttributes>.activities where act.attributes.habitID == habit.id.uuidString {
                 Task {
@@ -191,6 +262,117 @@ final class HabitStore: ObservableObject {
         // no-op when ActivityKit is unavailable
 #endif
     }
+
+    /// Public wrapper with explicit phase info from the foreground UI
+    /// Use this when you know the current step (e.g. "Start", "Aktion 1") and its remaining seconds.
+    /// - Parameters:
+    ///   - habit: The habit being timed
+    ///   - remainingTotalSeconds: Total remaining time across all segments
+    ///   - paused: Whether the timer is paused
+    ///   - currentPhaseName: Optional display name of the current segment (e.g. "Start", "Aktion 1", "Pause")
+    ///   - currentPhaseRemaining: Optional remaining seconds in the current segment
+    func updateLiveActivityFromForeground(
+        habit: Habit,
+        remainingTotalSeconds: Int,
+        paused: Bool,
+        currentPhaseName: String?,
+        currentPhaseRemaining: Int?
+    ) {
+#if canImport(ActivityKit)
+        if #available(iOS 16.1, *) {
+            updateLiveActivityWithInjectedPhase(
+                habit: habit,
+                remainingTotalSeconds: remainingTotalSeconds,
+                paused: paused,
+                injectedPhaseName: currentPhaseName,
+                injectedPhaseRemaining: currentPhaseRemaining
+            )
+        }
+#else
+        // no-op when ActivityKit is unavailable
+#endif
+    }
+
+#if canImport(ActivityKit)
+    @available(iOS 16.1, *)
+    private func updateLiveActivityWithInjectedPhase(
+        habit: Habit,
+        remainingTotalSeconds: Int,
+        paused: Bool,
+        injectedPhaseName: String?,
+        injectedPhaseRemaining: Int?
+    ) {
+        if isRunningInAppExtension {
+            habitLog.warning("[LiveActivity] SKIP: update/request from extension bundle=\(Bundle.main.bundleIdentifier ?? "-", privacy: .public)")
+            return
+        }
+        // Diagnostics: environment + Info.plist flag
+        let liveKey = Bundle.main.object(forInfoDictionaryKey: "NSSupportsLiveActivities") ?? "nil"
+        let bundleID = Bundle.main.bundleIdentifier ?? "-"
+        let os = ProcessInfo.processInfo.operatingSystemVersion
+#if canImport(UIKit)
+        let idiom = UIDevice.current.userInterfaceIdiom
+        let catalyst = ProcessInfo.processInfo.isMacCatalystApp
+        let appOnMac = ProcessInfo.processInfo.isiOSAppOnMac
+        print("[LiveActivity] env: bundle=\(bundleID) NSSupportsLiveActivities=\(liveKey) os=\(os.majorVersion).\(os.minorVersion).\(os.patchVersion) idiom=\(idiom.rawValue) catalyst=\(catalyst) appOnMac=\(appOnMac)")
+#else
+        print("[LiveActivity] env: bundle=\(bundleID) NSSupportsLiveActivities=\(liveKey) (no UIKit)")
+#endif
+        let auth = ActivityAuthorizationInfo()
+        guard auth.areActivitiesEnabled else {
+            habitLog.warning("[LiveActivity] not enabled; skip update (remaining=\(remainingTotalSeconds), paused=\(paused, privacy: .public))")
+            return
+        }
+
+        // Compose display title and content state using foreground-provided phase info (if any)
+        var displayTitle = habit.title
+        if let name = injectedPhaseName, !name.isEmpty {
+            displayTitle += " • \(name)"
+            print("[LiveActivity] (fg) phase name=\(name) remaining=\(injectedPhaseRemaining ?? -1)")
+        }
+
+        var state = HabitTimerActivityAttributes.ContentState(
+            title: displayTitle,
+            remaining: max(0, remainingTotalSeconds),
+            paused: paused,
+            total: plannedSeconds(for: habit)
+        )
+        if let name = injectedPhaseName, !name.isEmpty {
+            state.currentPhaseName = name
+        }
+        if let segRemaining = injectedPhaseRemaining {
+            state.currentPhaseRemaining = max(0, segRemaining)
+        }
+        print("[LiveActivity] (fg) contentState phase='\(state.currentPhaseName ?? "-")' currentRemaining=\(state.currentPhaseRemaining ?? -1) totalRemaining=\(state.remaining)")
+
+        if let act = findActivity(for: habit.id) {
+            habitLog.info("[LiveActivity] update existing activity for \(habit.title, privacy: .public) [fg]")
+            Task {
+                if #available(iOS 16.2, *) {
+                    await act.update(ActivityContent(state: state, staleDate: nil))
+                } else {
+                    await act.update(using: state)
+                }
+            }
+        } else {
+            habitLog.info("[LiveActivity] request creating new activity for \(habit.title, privacy: .public) [fg]")
+            do {
+                let attrs = HabitTimerActivityAttributes(habitID: habit.id.uuidString)
+                if #available(iOS 16.2, *) {
+                    let content = ActivityContent(state: state, staleDate: nil)
+                    let activity = try Activity.request(attributes: attrs, content: content, pushType: nil)
+                    habitLog.info("[LiveActivity] started id=\(activity.id, privacy: .public) habitID=\(habit.id.uuidString, privacy: .public)")
+                } else {
+                    let activity = try Activity.request(attributes: attrs, contentState: state, pushType: nil)
+                    habitLog.info("[LiveActivity] started (16.1) id=\(activity.id, privacy: .public) habitID=\(habit.id.uuidString, privacy: .public)")
+                }
+            } catch {
+                let nsErr = error as NSError
+                habitLog.error("[LiveActivity] request FAILED: type=\(String(reflecting: type(of: error)), privacy: .public) code=\(nsErr.code) domain=\(nsErr.domain, privacy: .public) desc=\(nsErr.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+#endif
 
     func beginBackgroundRun(habit: Habit, currentIndex: Int, remaining: Int, active: Bool = true) {
         backgroundSessions[habit.id] = BackgroundSession(
