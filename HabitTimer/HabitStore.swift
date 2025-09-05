@@ -107,6 +107,56 @@ final class HabitStore: ObservableObject {
         var active: Bool
     }
 
+    // Compute action-based phase position (exclude pauses); index is 1-based for display
+    private func actionPhasePosition(for sess: BackgroundSession) -> (index: Int, count: Int)? {
+        let total = sess.segments.reduce(0) { $0 + ($1.type == .pause ? 0 : 1) }
+        guard total > 0 else { return nil }
+        var idx = 0
+        if sess.currentIndex >= 0 && sess.currentIndex < sess.segments.count {
+            for i in 0...sess.currentIndex {
+                if sess.segments[i].type != .pause { idx += 1 }
+            }
+        }
+        // During a pause segment, idx reflects the last completed action; clamp to [1,total]
+        idx = max(1, min(total, idx))
+        return (idx, total)
+    }
+
+    // Extract the first integer found in a string (e.g., "Aktiv 3" → 3)
+    private func extractFirstInt(from s: String) -> Int? {
+        var digits = ""
+        for ch in s {
+            if ch.isNumber {
+                digits.append(ch)
+            } else if !digits.isEmpty {
+                break
+            }
+        }
+        return digits.isEmpty ? nil : Int(digits)
+    }
+
+    // Verbose debug: dump all segments, durations, non-zero filtering and mapping to display index
+    private func debugDumpPhases(prefix: String, habit: Habit, durations: [Int], session: BackgroundSession?, currentName: String?) {
+        let totalSegs = habit.segments.count
+        print("\(prefix) segments dump: count=\(totalSegs)")
+        for (i, seg) in habit.segments.enumerated() {
+            let dur = max(0, Int(seg.duration.rounded()))
+            let kind = (seg.type == .pause) ? "pause" : "action"
+            let stop = seg.isStop ? " stop" : ""
+            let mark = (session?.currentIndex == i) ? " <== current" : ""
+            print("  [\(i)] \(kind)\(stop) dur=\(dur)s\(mark)")
+        }
+        print("\(prefix) durations=\(durations)")
+        let nonZeroIdx = durations.enumerated().filter { $0.element > 0 }.map { $0.offset }
+        print("\(prefix) nonZeroIndices=\(nonZeroIdx) count=\(nonZeroIdx.count)")
+        if let zi = session?.currentIndex, zi >= 0, zi < durations.count {
+            let oneBased = durations[0...zi].filter { $0 > 0 }.count
+            print("\(prefix) map currentIndex=\(zi) → oneBased among >0=\(oneBased)")
+        } else {
+            print("\(prefix) no session/currentIndex; currentPhaseName='\(currentName ?? "-")'")
+        }
+    }
+
     // MARK: - Phase helpers for Live Activity (name + remaining of current segment)
     private func currentPhaseName(for sess: BackgroundSession) -> String {
         // If we can distinguish pause vs action via segment.type, derive a friendly name
@@ -188,9 +238,38 @@ final class HabitStore: ObservableObject {
                 state.currentPhaseRemaining = phase.remaining
                 print("[LiveActivity] contentState phase='\(phase.name)' currentRemaining=\(phase.remaining)")
             }
+            // Provide full phase durations + zero-based index for widget-side non-zero filtering
+            let durations: [Int] = habit.segments.map { max(0, Int($0.duration.rounded())) }
+            state.phaseDurations = durations
+            if let sess = self.backgroundSessions[habit.id] {
+                state.phaseIndexZeroBased = sess.currentIndex
+                if sess.currentIndex >= 0 && sess.currentIndex < durations.count {
+                    state.currentPhaseTotal = durations[sess.currentIndex]
+                }
+            }
+            print("[LiveActivity] content durations=\(durations) idx0=\(String(describing: state.phaseIndexZeroBased)) totalSec=\(String(describing: state.currentPhaseTotal))")
+            // Populate phase count/index based on *all* phases with duration > 0 seconds
+            let nonZeroCount = durations.filter { $0 > 0 }.count
+            if nonZeroCount > 0 {
+                state.phaseCount = nonZeroCount
+            } else {
+                state.phaseCount = nil
+            }
+            if let sess = self.backgroundSessions[habit.id] {
+                // Map the raw zero-based segment index to a 1-based position among non-zero-duration phases
+                let zi = max(0, min(durations.count - 1, sess.currentIndex))
+                let oneBased = durations[0...zi].filter { $0 > 0 }.count
+                state.currentPhaseIndex = oneBased > 0 ? oneBased : nil
+                print("[LiveActivity] phase position (by durations) = \(state.currentPhaseIndex ?? -1)/\(state.phaseCount ?? -1)")
+            } else {
+                print("[LiveActivity] phase position unavailable (no session); count=\(state.phaseCount ?? -1)")
+            }
+            print("[LiveActivity] content summary: index=\(String(describing: state.currentPhaseIndex)) count=\(String(describing: state.phaseCount)) name='\(state.currentPhaseName ?? "-")' segRemaining=\(state.currentPhaseRemaining ?? -1) totalRemaining=\(state.remaining)")
+            self.debugDumpPhases(prefix: "[LiveActivity]", habit: habit, durations: durations, session: self.backgroundSessions[habit.id], currentName: state.currentPhaseName)
             if let act = findActivity(for: habit.id) {
                 habitLog.info("[LiveActivity] update existing activity for \(habit.title, privacy: .public)")
                 Task {
+                    print("[LiveActivity] sending UPDATE: index=\(String(describing: state.currentPhaseIndex)) count=\(String(describing: state.phaseCount))")
                     if #available(iOS 16.2, *) {
                         await act.update(ActivityContent(state: state, staleDate: nil))
                     } else {
@@ -201,6 +280,7 @@ final class HabitStore: ObservableObject {
                 habitLog.info("[LiveActivity] request creating new activity for \(habit.title, privacy: .public)")
                 do {
                     let attrs = HabitTimerActivityAttributes(habitID: habit.id.uuidString)
+                    print("[LiveActivity] sending REQUEST: index=\(String(describing: state.currentPhaseIndex)) count=\(String(describing: state.phaseCount))")
                     if #available(iOS 16.2, *) {
                         let content = ActivityContent(state: state, staleDate: nil)
                         let activity = try Activity.request(attributes: attrs, content: content, pushType: nil)
@@ -344,6 +424,57 @@ final class HabitStore: ObservableObject {
             state.currentPhaseRemaining = max(0, segRemaining)
         }
         print("[LiveActivity] (fg) contentState phase='\(state.currentPhaseName ?? "-")' currentRemaining=\(state.currentPhaseRemaining ?? -1) totalRemaining=\(state.remaining)")
+        // Provide full phase durations + zero-based index when we have a session
+        let durations: [Int] = habit.segments.map { max(0, Int($0.duration.rounded())) }
+        state.phaseDurations = durations
+        if let sess = self.backgroundSessions[habit.id] {
+            state.phaseIndexZeroBased = sess.currentIndex
+            if sess.currentIndex >= 0 && sess.currentIndex < durations.count {
+                state.currentPhaseTotal = durations[sess.currentIndex]
+            }
+        }
+        print("[LiveActivity] (fg) content durations=\(durations) idx0=\(String(describing: state.phaseIndexZeroBased)) totalSec=\(String(describing: state.currentPhaseTotal))")
+
+        // Populate phase count/index strictly from *all* phases with duration > 0 seconds
+        let nonZeroCount = durations.filter { $0 > 0 }.count
+        state.phaseCount = nonZeroCount > 0 ? nonZeroCount : nil
+
+        if let sess = self.backgroundSessions[habit.id] {
+            // Prefer exact mapping from the raw zero-based segment index
+            let zi = max(0, min(durations.count - 1, sess.currentIndex))
+            let oneBased = durations[0...zi].filter { $0 > 0 }.count
+            state.currentPhaseIndex = oneBased > 0 ? oneBased : nil
+            print("[LiveActivity] (fg) phase position (by durations) = \(state.currentPhaseIndex ?? -1)/\(state.phaseCount ?? -1)")
+        } else if let rawName = state.currentPhaseName, !rawName.isEmpty {
+            // Fallback: try to map from a number inside the phase name (may include Pause/Start if numbered)
+            if let n = extractFirstInt(from: rawName) {
+                let clampedOneBased = max(1, min(nonZeroCount > 0 ? nonZeroCount : n, n))
+                state.currentPhaseIndex = clampedOneBased
+                print("[LiveActivity] (fg) derived index from name='\(rawName)' → \(clampedOneBased)/\(state.phaseCount ?? -1)")
+            } else {
+                print("[LiveActivity] (fg) no numeric hint in name='\(rawName)'; index remains nil; count=\(state.phaseCount ?? -1)")
+            }
+        } else {
+            print("[LiveActivity] (fg) phase position unavailable: no session and no name; count=\(state.phaseCount ?? -1)")
+        }
+        self.debugDumpPhases(prefix: "[LiveActivity] (fg)", habit: habit, durations: durations, session: self.backgroundSessions[habit.id], currentName: state.currentPhaseName)
+
+        // Derive zero-based phase index from 1-based action position when no session is available.
+        if state.phaseIndexZeroBased == nil, let oneBased = state.currentPhaseIndex, let arr = state.phaseDurations, !arr.isEmpty {
+            var count = 0
+            var derivedZ: Int? = nil
+            for (i, d) in arr.enumerated() {
+                if d > 0 { count += 1 }
+                if count == oneBased { derivedZ = i; break }
+            }
+            if let z = derivedZ {
+                state.phaseIndexZeroBased = z
+                if z >= 0 && z < arr.count { state.currentPhaseTotal = arr[z] }
+                print("[LiveActivity] (fg) derived idx0 from one-based=\(oneBased) → idx0=\(z) totalSec=\(state.currentPhaseTotal ?? -1)")
+            } else {
+                print("[LiveActivity] (fg) unable to derive idx0 from one-based \(oneBased) with durations \(arr)")
+            }
+        }
 
         if let act = findActivity(for: habit.id) {
             habitLog.info("[LiveActivity] update existing activity for \(habit.title, privacy: .public) [fg]")
@@ -382,6 +513,9 @@ final class HabitStore: ObservableObject {
             segments: habit.segments,
             active: active
         )
+        let totalSegments = habit.segments.count
+        let totalActions = habit.segments.reduce(0) { $0 + ($1.type == .pause ? 0 : 1) }
+        print("[LiveActivity] beginBackgroundRun: habit=\(habit.title) segments=\(totalSegments) actions=\(totalActions) currentIndex=\(currentIndex) remaining=\(remaining) active=\(active)")
         // Update Live Activity state (start if needed)
         if let sess = backgroundSessions[habit.id] {
             let total = totalRemaining(for: sess)

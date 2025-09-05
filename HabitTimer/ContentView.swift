@@ -229,6 +229,7 @@ struct HabitListRow: View {
     }
 
     private func progressFraction(for habit: Habit) -> Double? {
+        guard store.isRunning(habit) else { return nil }
         guard let remaining = store.sessionRemainingTotalSeconds(for: habit) else { return nil }
         let total = plannedSeconds(habit)
         guard total > 0 else { return nil }

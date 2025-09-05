@@ -93,6 +93,16 @@ struct CountdownView: View {
 
     private var remainingTotalTimeString: String { format(remainingTotalSeconds) }
 
+    // MARK: - Live Activity helpers (current step)
+    private func currentStepNameForLiveActivity() -> String? {
+        let name = label(for: currentIndex)
+        return name == "–" ? nil : name
+    }
+
+    private func currentStepRemainingForLiveActivity() -> Int? {
+        return segments.indices.contains(currentIndex) ? max(0, remaining) : nil
+    }
+
     private var nextSegmentIndex: Int? {
         let next = currentIndex + 1
         return next < segments.count ? next : nil
@@ -156,7 +166,13 @@ struct CountdownView: View {
     private func startPauseTapped() {
         if timerActive {
             timerActive = false
-            self.store.updateLiveActivityFromForeground(habit: self.habit, remainingTotalSeconds: self.remainingTotalSeconds, paused: true)
+            self.store.updateLiveActivityFromForeground(
+                habit: self.habit,
+                remainingTotalSeconds: self.remainingTotalSeconds,
+                paused: true,
+                currentPhaseName: self.currentStepNameForLiveActivity(),
+                currentPhaseRemaining: self.currentStepRemainingForLiveActivity()
+            )
         } else {
             if isStopSegment(at: currentIndex) {
                 advance()
@@ -164,7 +180,13 @@ struct CountdownView: View {
             if segments.indices.contains(currentIndex) && !isStopSegment(at: currentIndex) && remaining > 0 {
                 hasStarted = true
                 timerActive = true
-                self.store.updateLiveActivityFromForeground(habit: self.habit, remainingTotalSeconds: self.remainingTotalSeconds, paused: false)
+                self.store.updateLiveActivityFromForeground(
+                    habit: self.habit,
+                    remainingTotalSeconds: self.remainingTotalSeconds,
+                    paused: false,
+                    currentPhaseName: self.currentStepNameForLiveActivity(),
+                    currentPhaseRemaining: self.currentStepRemainingForLiveActivity()
+                )
             }
         }
     }
@@ -327,14 +349,26 @@ var body: some View {
                 remaining -= 1
                 let total = remainingTotalSeconds
                 // Live Activity: foreground tick update
-                self.store.updateLiveActivityFromForeground(habit: self.habit, remainingTotalSeconds: total, paused: false)
+                self.store.updateLiveActivityFromForeground(
+                    habit: self.habit,
+                    remainingTotalSeconds: total,
+                    paused: false,
+                    currentPhaseName: self.currentStepNameForLiveActivity(),
+                    currentPhaseRemaining: self.currentStepRemainingForLiveActivity()
+                )
             } else {
                 remaining = 0
                 advance()
                 if timerActive {
                     let total = remainingTotalSeconds
                     // If not finished (and not at Stop), update once after advancing
-                    self.store.updateLiveActivityFromForeground(habit: self.habit, remainingTotalSeconds: total, paused: false)
+                    self.store.updateLiveActivityFromForeground(
+                        habit: self.habit,
+                        remainingTotalSeconds: total,
+                        paused: false,
+                        currentPhaseName: self.currentStepNameForLiveActivity(),
+                        currentPhaseRemaining: self.currentStepRemainingForLiveActivity()
+                    )
                 }
             }
         }
